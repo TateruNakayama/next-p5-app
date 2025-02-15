@@ -13,10 +13,11 @@ const P5Component = () => {
     let basketY: number;
     let basketWidth: number;
     let basketHeight: number;
-    let acorns: { x: number, y: number }[] = [];
     let score: number = 0;
     let basketImg: p5Types.Image;
     let acornImg: p5Types.Image;
+    let isTouching: boolean = false;
+    const acorns: { x: number, y: number }[] = [];
 
     // 画像などのロードを行う
     const preload = (p5: p5Types) => {
@@ -35,14 +36,14 @@ const P5Component = () => {
 
     // 1フレームごとの処理
     const draw = (p5: p5Types) => {
-        p5.background(255,255,255);
+        p5.background(255, 255, 255);
 
         // カゴの描画
         p5.image(basketImg, basketX, basketY, basketWidth, basketHeight);
 
         // 🌰の描画と落下
         for (let i = acorns.length - 1; i >= 0; i--) {
-            let acorn = acorns[i];
+            const acorn = acorns[i];
             acorn.y += 5;
             p5.image(acornImg, acorn.x, acorn.y, 20, 20);
 
@@ -61,17 +62,45 @@ const P5Component = () => {
         p5.text(`Score: ${score}`, 10, 30);
 
         // 新しい🌰を追加
-        if (p5.frameCount % 60 === 0) {
+        if (p5.frameCount % 15 === 0) {
             acorns.push({ x: p5.random(20, p5.windowWidth - 20), y: 0 });
         }
 
-        // カゴの移動
+        // カゴの移動（キーボード操作）
         if (p5.keyIsDown(p5.LEFT_ARROW)) {
             basketX -= 10;
         }
         if (p5.keyIsDown(p5.RIGHT_ARROW)) {
             basketX += 10;
         }
+
+        // カゴの移動（マウス操作）
+        if (p5.mouseIsPressed) {
+            basketX = p5.mouseX - basketWidth / 2;
+        }
+    };
+
+    // タッチ操作の開始
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const touchStarted = (p5: p5Types) => {
+        isTouching = true;
+        return false;
+    };
+
+    // タッチ操作の終了
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const touchEnded = (p5: p5Types) => {
+        isTouching = false;
+        return false;
+    };
+
+    // タッチ操作の移動
+    const touchMoved = (p5: p5Types) => {
+        if (isTouching && p5.touches.length > 0) {
+            const touch = p5.touches[0] as Touch;
+            basketX = touch.clientX - basketWidth / 2;
+        }
+        return false;
     };
 
     // コンポーネントのレスポンシブ化
@@ -85,6 +114,9 @@ const P5Component = () => {
             preload={preload}
             setup={setup}
             draw={draw}
+            touchStarted={touchStarted}
+            touchEnded={touchEnded}
+            touchMoved={touchMoved}
             windowResized={windowResized}
         />
     );
